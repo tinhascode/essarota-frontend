@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 import type { ApiErrorResponse } from '@/types/api';
@@ -6,10 +7,14 @@ const rawBaseUrl = (
   process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1'
 ).replace(/\/+$/, '');
 
+const LOOPBACK = /localhost|127\.0\.0\.1/;
+
+// On a device, "localhost" is the device itself: point to the machine running Metro instead.
 export const API_BASE_URL = (() => {
-  if (Platform.OS === 'android' && (rawBaseUrl.includes('localhost') || rawBaseUrl.includes('127.0.0.1'))) {
-    return rawBaseUrl.replace(/localhost|127\.0\.0\.1/, '10.0.2.2');
-  }
+  if (Platform.OS === 'web' || !LOOPBACK.test(rawBaseUrl)) return rawBaseUrl;
+  const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+  if (devHost && !LOOPBACK.test(devHost)) return rawBaseUrl.replace(LOOPBACK, devHost);
+  if (Platform.OS === 'android') return rawBaseUrl.replace(LOOPBACK, '10.0.2.2');
   return rawBaseUrl;
 })();
 

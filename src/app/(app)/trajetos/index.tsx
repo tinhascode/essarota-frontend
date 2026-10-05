@@ -130,6 +130,7 @@ export default function TrajetosScreen() {
         <TrajetoCard
           trajeto={item}
           deleting={deletingId === item.id}
+          onPress={() => router.push(`/trajetos/${item.id}`)}
           onEdit={() => handleEdit(item)}
           onDelete={() => handleDelete(item)}
         />

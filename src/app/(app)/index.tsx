@@ -307,8 +307,14 @@ export default function MapaScreen() {
                   </ThemedText>
                 </View>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Em breve você verá aqui as linhas de trem e ônibus do percurso e receberá alertas delas.
+                  Associe as linhas de metrô, trem e ônibus que você usa para acompanhar os alertas delas.
                 </ThemedText>
+                <Button
+                  title="Adicionar linhas"
+                  icon="train"
+                  variant="secondary"
+                  onPress={() => router.push(`/trajetos/${saved.id}`, { withAnchor: true })}
+                />
                 <View style={styles.savedActions}>
                   <Button
                     title="Ver meus trajetos"
@@ -316,7 +322,7 @@ export default function MapaScreen() {
                     style={styles.flex}
                     onPress={() => router.navigate('/trajetos')}
                   />
-                  <Button title="Novo trajeto" style={styles.flex} onPress={resetForm} />
+                  <Button title="Novo trajeto" variant="ghost" style={styles.flex} onPress={resetForm} />
                 </View>
               </Card>
             ) : (
@@ -332,7 +338,7 @@ export default function MapaScreen() {
             <View style={styles.footnote}>
               <Icon name="train" size={14} color={colors.textSecondary} />
               <ThemedText type="caption" themeColor="textSecondary">
-                Rotas com linhas de trem e ônibus em breve.
+                Depois de salvar, associe linhas ao trajeto para receber alertas.
               </ThemedText>
             </View>
           </ScrollView>

@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
@@ -11,16 +11,22 @@ import type { TrajetoResponse } from '@/types/api';
 type TrajetoCardProps = {
   trajeto: TrajetoResponse;
   deleting?: boolean;
+  onPress?: () => void;
   onEdit: () => void;
   onDelete: () => void;
 };
 
-export function TrajetoCard({ trajeto, deleting = false, onEdit, onDelete }: TrajetoCardProps) {
+export function TrajetoCard({ trajeto, deleting = false, onPress, onEdit, onDelete }: TrajetoCardProps) {
   const theme = useTheme();
 
   return (
     <Card style={[styles.card, deleting && styles.deleting]}>
-      <View style={styles.route}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Abrir trajeto ${trajeto.origem} para ${trajeto.destino}`}
+        disabled={!onPress}
+        onPress={onPress}
+        style={({ pressed }) => [styles.route, pressed && styles.pressed]}>
         <View style={styles.timeline}>
           <View style={[styles.originDot, { borderColor: theme.accent }]} />
           <View style={[styles.connector, { borderColor: theme.border }]} />
@@ -44,7 +50,8 @@ export function TrajetoCard({ trajeto, deleting = false, onEdit, onDelete }: Tra
             </ThemedText>
           </View>
         </View>
-      </View>
+        {onPress && <Icon name="chevronRight" size={20} color={theme.textSecondary} style={styles.chevron} />}
+      </Pressable>
 
       <View style={[styles.footer, { borderTopColor: theme.border }]}>
         <View style={[styles.timeChip, { backgroundColor: theme.primarySoft }]}>
@@ -78,6 +85,12 @@ const styles = StyleSheet.create({
   route: {
     flexDirection: 'row',
     gap: Spacing.three,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  chevron: {
+    alignSelf: 'center',
   },
   timeline: {
     alignItems: 'center',

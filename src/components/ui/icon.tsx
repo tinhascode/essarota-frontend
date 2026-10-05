@@ -17,7 +17,16 @@ const icons = {
   origin: { ios: 'circle.circle.fill', material: 'trip_origin' },
   pin: { ios: 'mappin.circle.fill', material: 'location_on' },
   train: { ios: 'tram.fill', material: 'directions_subway' },
+  trem: { ios: 'train.side.front.car', material: 'directions_railway' },
+  bus: { ios: 'bus.fill', material: 'directions_bus' },
   add: { ios: 'plus', material: 'add' },
+  warning: { ios: 'exclamationmark.triangle.fill', material: 'warning' },
+  bell: { ios: 'bell.fill', material: 'notifications' },
+  person: { ios: 'person.crop.circle.fill', material: 'person' },
+  chevronRight: { ios: 'chevron.right', material: 'chevron_right' },
+  check: { ios: 'checkmark', material: 'check' },
+  filter: { ios: 'line.3.horizontal.decrease.circle', material: 'filter_list' },
+  chat: { ios: 'message.fill', material: 'chat' },
 } satisfies Record<string, { ios: SFSymbol; material: AndroidSymbol }>;
 
 export type IconName = keyof typeof icons;
