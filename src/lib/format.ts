@@ -16,8 +16,9 @@ export const SEVERIDADES: { value: SeveridadeAlerta; label: string }[] = [
 ];
 
 export const CANAIS: { value: CanalNotificacao; label: string }[] = [
+  { value: 'APP', label: 'App' },
+  { value: 'PUSH', label: 'App' },
   { value: 'WHATSAPP', label: 'WhatsApp' },
-  { value: 'PUSH', label: 'Push' },
 ];
 
 export function tipoLabel(tipo: string): string {
@@ -41,7 +42,7 @@ export function severidadeLabel(severidade: string): string {
 export function severidadeColors(severidade: string): { color: ThemeColor; background: ThemeColor } {
   switch (severidade) {
     case 'BAIXA':
-      return { color: 'teal', background: 'tealSoft' };
+      return { color: 'textSecondary', background: 'backgroundElement' };
     case 'MEDIA':
       return { color: 'warning', background: 'warningSoft' };
     case 'ALTA':
@@ -51,10 +52,15 @@ export function severidadeColors(severidade: string): { color: ThemeColor; backg
   }
 }
 
-export function formatDateTime(iso: string): string {
+function parseApiDate(iso: string): Date | null {
   // Hermes rejects ISO strings with more than 3 fractional digits (the API sends nanoseconds).
   const date = new Date(iso.replace(/(\.\d{3})\d+/, '$1'));
-  if (Number.isNaN(date.getTime())) return iso;
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function formatDateTime(iso: string): string {
+  const date = parseApiDate(iso);
+  if (!date) return iso;
   return date.toLocaleString('pt-BR', {
     day: '2-digit',
     month: '2-digit',

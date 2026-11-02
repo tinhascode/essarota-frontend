@@ -2,6 +2,7 @@ export const StorageKeys = {
   token: 'essarota.token',
   session: 'essarota.session',
   themePreference: 'essarota.theme',
+  lastSeenNotificacoes: 'essarota.lastSeenNotificacoes',
 } as const;
 
 function getLocalStorage(): Storage | null {

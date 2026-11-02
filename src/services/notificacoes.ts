@@ -1,5 +1,5 @@
 import { request } from '@/services/http';
-import type { CriarNotificacaoRequest, NotificacaoResponse } from '@/types/api';
+import type { CriarNotificacaoRequest, MockNotificacaoRequest, NotificacaoResponse } from '@/types/api';
 
 export async function minhasNotificacoes() {
   const notificacoes = await request<NotificacaoResponse[]>('/notificacoes/me');
@@ -12,4 +12,8 @@ export function buscarNotificacao(id: string) {
 
 export function registrarNotificacao(body: CriarNotificacaoRequest) {
   return request<NotificacaoResponse>('/notificacoes', { method: 'POST', body });
+}
+
+export function dispararNotificacaoMock(body: MockNotificacaoRequest = {}) {
+  return request<unknown>('/dev/notificacoes-mock', { method: 'POST', body });
 }

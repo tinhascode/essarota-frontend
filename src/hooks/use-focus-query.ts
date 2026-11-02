@@ -14,7 +14,11 @@ type FocusQuery<T> = {
 };
 
 /** Loads data every time the screen gains focus. `fetcher` must be memoized. */
-export function useFocusQuery<T>(fetcher: () => Promise<T>, fallbackError: string): FocusQuery<T> {
+export function useFocusQuery<T>(
+  fetcher: () => Promise<T>,
+  fallbackError: string,
+  intervalMs?: number
+): FocusQuery<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<number | null>(null);
@@ -39,7 +43,10 @@ export function useFocusQuery<T>(fetcher: () => Promise<T>, fallbackError: strin
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load])
+      if (!intervalMs) return;
+      const timer = setInterval(load, intervalMs);
+      return () => clearInterval(timer);
+    }, [load, intervalMs])
   );
 
   const refresh = useCallback(async () => {

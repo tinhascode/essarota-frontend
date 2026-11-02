@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, type TextInput } from 'react-native';
+import { StyleSheet, type TextInputInstance } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -26,9 +26,9 @@ type Field = 'nome' | 'email' | 'senha' | 'telefoneWhatsapp';
 
 export default function EditarPerfilScreen() {
   const { profile, refreshProfile, applyUser, signIn, signOut } = useAuth();
-  const emailRef = useRef<TextInput>(null);
-  const telefoneRef = useRef<TextInput>(null);
-  const senhaRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const telefoneRef = useRef<TextInputInstance>(null);
+  const senhaRef = useRef<TextInputInstance>(null);
 
   const [nome, setNome] = useState(profile?.nome ?? '');
   const [email, setEmail] = useState(profile?.email ?? '');
@@ -130,6 +130,7 @@ export default function EditarPerfilScreen() {
         onChangeText={setTelefone}
         onSubmitEditing={() => senhaRef.current?.focus()}
         error={errors.telefoneWhatsapp}
+        hint="Informe o WhatsApp para receber alertas da sua rota."
       />
       <TextField
         ref={senhaRef}

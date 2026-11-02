@@ -97,14 +97,15 @@ export async function request<T>(path: string, { method = 'GET', body, query }: 
     throw new ApiError(401, 'Sua sessão expirou. Entre novamente.');
   }
 
-  if (response.status === 429) {
-    const retryAfter =
-      payload?.retryAfterSeconds ?? (Number(response.headers.get('Retry-After')) || 60);
+  const retryAfter =
+    payload?.retryAfterSeconds ?? (Number(response.headers.get('Retry-After')) || 0);
+  if (response.status === 429 || (response.status === 403 && retryAfter > 0)) {
+    const wait = retryAfter || 60;
     throw new ApiError(
-      429,
-      `Muitas requisições. Aguarde ${retryAfter}s e tente novamente.`,
+      response.status,
+      `Muitas requisições. Aguarde ${wait}s e tente novamente.`,
       null,
-      retryAfter
+      wait
     );
   }
 

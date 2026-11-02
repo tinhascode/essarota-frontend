@@ -11,7 +11,9 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm, notify } from '@/lib/confirm';
 import { useAuth } from '@/providers/auth-provider';
+import { listarAlertas } from '@/services/alertas';
 import { ApiError } from '@/services/http';
+import { listarLinhasDoTrajeto } from '@/services/trajeto-linhas';
 import { excluirTrajeto, listarTrajetos } from '@/services/trajetos';
 import type { TrajetoResponse } from '@/types/api';
 
@@ -20,13 +22,25 @@ export default function TrajetosScreen() {
   const { profile } = useAuth();
 
   const [trajetos, setTrajetos] = useState<TrajetoResponse[] | null>(null);
+  const [ocorrencias, setOcorrencias] = useState<Record<string, number>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setTrajetos(await listarTrajetos());
+      const lista = await listarTrajetos();
+      const [alertas, associacoes] = await Promise.all([
+        listarAlertas(),
+        Promise.all(lista.map((trajeto) => listarLinhasDoTrajeto(trajeto.id))),
+      ]);
+      const counts: Record<string, number> = {};
+      lista.forEach((trajeto, index) => {
+        const linhaIds = new Set(associacoes[index].map((item) => item.linhaId));
+        counts[trajeto.id] = alertas.filter((alerta) => linhaIds.has(alerta.linhaId)).length;
+      });
+      setTrajetos(lista);
+      setOcorrencias(counts);
       setError(null);
     } catch (reason) {
       setError(reason instanceof ApiError ? reason.message : 'Não foi possível carregar seus trajetos.');
@@ -109,7 +123,7 @@ export default function TrajetosScreen() {
         </View>
       }
       ListEmptyComponent={
-        error ? null : (
+        error ? undefined : (
           <View style={styles.empty}>
             <Image
               source={require('@/assets/essarota/essarota-logo-sem-fundo.png')}
@@ -130,6 +144,7 @@ export default function TrajetosScreen() {
         <TrajetoCard
           trajeto={item}
           deleting={deletingId === item.id}
+          ocorrencias={ocorrencias[item.id] ?? 0}
           onPress={() => router.push(`/trajetos/${item.id}`)}
           onEdit={() => handleEdit(item)}
           onDelete={() => handleDelete(item)}

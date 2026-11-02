@@ -19,6 +19,7 @@ import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { tipoLabel } from '@/lib/format';
 import { goBack } from '@/lib/navigation';
+import { INBOX_POLL_MS } from '@/providers/inbox-provider';
 import { listarAlertas } from '@/services/alertas';
 import { listarLinhas } from '@/services/linhas';
 import { associarLinha, listarLinhasDoTrajeto, removerLinha } from '@/services/trajeto-linhas';
@@ -38,7 +39,7 @@ export default function TrajetoDetalheScreen() {
     return { trajeto, associacoes, linhas, alertas };
   }, [id]);
 
-  const query = useFocusQuery(fetcher, 'Não foi possível carregar o trajeto.');
+  const query = useFocusQuery(fetcher, 'Não foi possível carregar o trajeto.', INBOX_POLL_MS);
   const { data, refresh } = query;
 
   const [adding, setAdding] = useState(false);
@@ -50,6 +51,13 @@ export default function TrajetoDetalheScreen() {
   const linhasById = useMemo(() => new Map(data?.linhas.map((linha) => [linha.id, linha])), [data]);
   const linkedIds = useMemo(() => new Set(data?.associacoes.map((item) => item.linhaId)), [data]);
   const disponiveis = data?.linhas.filter((linha) => !linkedIds.has(linha.id)) ?? [];
+  const linhasEmOcorrencia = useMemo(() => {
+    const ids = new Set<string>();
+    for (const alerta of data?.alertas ?? []) {
+      if (linkedIds.has(alerta.linhaId)) ids.add(alerta.linhaId);
+    }
+    return ids;
+  }, [data, linkedIds]);
   const alertas = data?.alertas.filter((alerta) => linkedIds.has(alerta.linhaId)) ?? [];
 
   if (query.loading) return <LoadingView />;
@@ -255,10 +263,10 @@ export default function TrajetoDetalheScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <ThemedText type="heading">Alertas das suas linhas</ThemedText>
-          {alertas.length > 0 && (
-            <View style={[styles.countBadge, { backgroundColor: theme.dangerSoft }]}>
-              <ThemedText type="caption" style={[styles.bold, { color: theme.danger }]}>
-                {alertas.length}
+          {linhasEmOcorrencia.size > 0 && (
+            <View style={[styles.countBadge, { backgroundColor: theme.orangeSoft }]}>
+              <ThemedText type="caption" style={[styles.bold, { color: theme.orange }]}>
+                {linhasEmOcorrencia.size}
               </ThemedText>
             </View>
           )}

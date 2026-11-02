@@ -15,6 +15,7 @@ import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { initials } from '@/lib/format';
 import { useAuth } from '@/providers/auth-provider';
+import { useInbox } from '@/providers/inbox-provider';
 import { useAppTheme, type ThemePreference } from '@/providers/theme-provider';
 import { excluirUsuario } from '@/services/usuarios';
 
@@ -22,6 +23,7 @@ export default function PerfilScreen() {
   const theme = useTheme();
   const { preference, setPreference } = useAppTheme();
   const { profile, refreshProfile, signOut } = useAuth();
+  const { unreadCount } = useInbox();
   const [deleting, setDeleting] = useState(false);
 
   useFocusEffect(
@@ -89,7 +91,13 @@ export default function PerfilScreen() {
 
       <Card style={styles.menu}>
         <MenuItem icon="edit" label="Editar dados" href="/perfil/editar" />
-        <MenuItem icon="bell" label="Histórico de notificações" href="/perfil/notificacoes" divider />
+        <MenuItem
+          icon="bell"
+          label="Histórico de notificações"
+          href="/perfil/notificacoes"
+          badge={unreadCount}
+          divider
+        />
         <MenuItem icon="route" label="Meus trajetos" href="/trajetos" divider />
       </Card>
 
@@ -122,7 +130,19 @@ export default function PerfilScreen() {
   );
 }
 
-function MenuItem({ icon, label, href, divider }: { icon: IconName; label: string; href: Href; divider?: boolean }) {
+function MenuItem({
+  icon,
+  label,
+  href,
+  badge,
+  divider,
+}: {
+  icon: IconName;
+  label: string;
+  href: Href;
+  badge?: number;
+  divider?: boolean;
+}) {
   const theme = useTheme();
   return (
     <Pressable
@@ -139,6 +159,13 @@ function MenuItem({ icon, label, href, divider }: { icon: IconName; label: strin
       <ThemedText type="smallBold" style={styles.flex}>
         {label}
       </ThemedText>
+      {badge ? (
+        <View style={[styles.badge, { backgroundColor: theme.danger }]}>
+          <ThemedText type="caption" style={{ color: theme.onPrimary, fontWeight: 800 }}>
+            {badge > 99 ? '99+' : badge}
+          </ThemedText>
+        </View>
+      ) : null}
       <Icon name="chevronRight" size={20} color={theme.textSecondary} />
     </Pressable>
   );
@@ -195,6 +222,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  badge: {
+    minWidth: 22,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.half,
+    borderRadius: 999,
+    alignItems: 'center',
   },
   pressed: {
     opacity: 0.7,

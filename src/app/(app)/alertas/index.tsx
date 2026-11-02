@@ -16,6 +16,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useFocusQuery } from '@/hooks/use-focus-query';
 import { useTheme } from '@/hooks/use-theme';
 import { tipoLabel } from '@/lib/format';
+import { INBOX_POLL_MS } from '@/providers/inbox-provider';
 import { listarAlertas } from '@/services/alertas';
 import { listarLinhas } from '@/services/linhas';
 import type { AlertaResponse, LinhaResponse } from '@/types/api';
@@ -34,7 +35,7 @@ export default function AlertasScreen() {
     return { linhas: [...linhas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')), alertas };
   }, [linhaFiltro]);
 
-  const query = useFocusQuery(fetcher, 'Não foi possível carregar os alertas.');
+  const query = useFocusQuery(fetcher, 'Não foi possível carregar os alertas.', INBOX_POLL_MS);
   const { data } = query;
 
   const linhasById = useMemo(() => new Map(data?.linhas.map((linha) => [linha.id, linha])), [data]);
@@ -92,7 +93,7 @@ export default function AlertasScreen() {
     </View>
   );
 
-  const empty = query.error ? null : (
+  const empty = query.error ? undefined : (
     <View style={styles.empty}>
       <View style={[styles.emptyIcon, { backgroundColor: aba === 'alertas' ? theme.accentSoft : theme.primarySoft }]}>
         <Icon

@@ -26,6 +26,10 @@ const styles = StyleSheet.create({
   fill: {
     flex: 1,
   },
+  cover: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 1,
+  },
 });
 
 function RootNavigator() {
@@ -36,23 +40,18 @@ function RootNavigator() {
     if (!isLoading) SplashScreen.hideAsync();
   }, [isLoading]);
 
-  // Guards must not be evaluated before the stored session is read, otherwise
-  // deep links are redirected to the auth group and lost.
-  if (isLoading) {
-    return <View style={[styles.fill, { backgroundColor: colors.background }]} />;
-  }
-
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Protected guard={!!token}>
+        <Stack.Protected guard={!isLoading && !!token}>
           <Stack.Screen name="(app)" />
         </Stack.Protected>
-        <Stack.Protected guard={!token}>
+        <Stack.Protected guard={isLoading || !token}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
+      {isLoading ? <View style={[styles.fill, styles.cover, { backgroundColor: colors.background }]} /> : null}
     </>
   );
 }

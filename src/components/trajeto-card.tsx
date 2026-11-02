@@ -11,12 +11,20 @@ import type { TrajetoResponse } from '@/types/api';
 type TrajetoCardProps = {
   trajeto: TrajetoResponse;
   deleting?: boolean;
+  ocorrencias?: number;
   onPress?: () => void;
   onEdit: () => void;
   onDelete: () => void;
 };
 
-export function TrajetoCard({ trajeto, deleting = false, onPress, onEdit, onDelete }: TrajetoCardProps) {
+export function TrajetoCard({
+  trajeto,
+  deleting = false,
+  ocorrencias = 0,
+  onPress,
+  onEdit,
+  onDelete,
+}: TrajetoCardProps) {
   const theme = useTheme();
 
   return (
@@ -54,11 +62,21 @@ export function TrajetoCard({ trajeto, deleting = false, onPress, onEdit, onDele
       </Pressable>
 
       <View style={[styles.footer, { borderTopColor: theme.border }]}>
-        <View style={[styles.timeChip, { backgroundColor: theme.primarySoft }]}>
-          <Icon name="clock" size={14} color={theme.primaryText} />
-          <ThemedText type="caption" themeColor="primaryText" style={styles.timeText}>
-            ~{trajeto.tempoEstimadoMinutos} min
-          </ThemedText>
+        <View style={styles.chips}>
+          <View style={[styles.timeChip, { backgroundColor: theme.primarySoft }]}>
+            <Icon name="clock" size={14} color={theme.primaryText} />
+            <ThemedText type="caption" themeColor="primaryText" style={styles.timeText}>
+              ~{trajeto.tempoEstimadoMinutos} min
+            </ThemedText>
+          </View>
+          {ocorrencias > 0 && (
+            <View style={[styles.timeChip, { backgroundColor: theme.orangeSoft }]}>
+              <Icon name="warning" size={14} color={theme.orange} />
+              <ThemedText type="caption" style={[styles.timeText, { color: theme.orange }]}>
+                {ocorrencias === 1 ? 'Em ocorrência' : `${ocorrencias} ocorrências`}
+              </ThemedText>
+            </View>
+          )}
         </View>
         <View style={styles.actions}>
           <IconButton icon="edit" size={36} accessibilityLabel="Editar trajeto" onPress={onEdit} />
@@ -119,6 +137,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: Spacing.two,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: Spacing.one,
+    flex: 1,
   },
   timeChip: {
     flexDirection: 'row',

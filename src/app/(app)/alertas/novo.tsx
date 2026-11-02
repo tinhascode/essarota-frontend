@@ -15,6 +15,8 @@ import { useFocusQuery } from '@/hooks/use-focus-query';
 import { SEVERIDADES } from '@/lib/format';
 import { goBack } from '@/lib/navigation';
 import { hasErrors, type FieldErrors } from '@/lib/validation';
+import { useAuth } from '@/providers/auth-provider';
+import { useInbox } from '@/providers/inbox-provider';
 import { criarAlerta } from '@/services/alertas';
 import { ApiError } from '@/services/http';
 import { listarLinhas } from '@/services/linhas';
@@ -26,6 +28,8 @@ const DESCRICAO_MAX = 500;
 
 export default function NovoAlertaScreen() {
   const params = useLocalSearchParams<{ linhaId?: string }>();
+  const { profile } = useAuth();
+  const { refresh: refreshInbox } = useInbox();
 
   const fetcher = useCallback(() => listarLinhas(), []);
   const query = useFocusQuery(fetcher, 'Não foi possível carregar as linhas.');
@@ -59,6 +63,7 @@ export default function NovoAlertaScreen() {
     setSubmitting(true);
     try {
       const alerta = await criarAlerta({ linhaId, descricao: text, severidade });
+      await refreshInbox();
       router.replace(`/alertas/${alerta.id}`);
     } catch (reason) {
       if (reason instanceof ApiError) {
@@ -75,8 +80,14 @@ export default function NovoAlertaScreen() {
   return (
     <Screen scroll edges={[]} contentStyle={styles.content}>
       <ThemedText type="small" themeColor="textSecondary">
-        Avise a comunidade sobre atrasos, interrupções ou lotação em uma linha.
+        Avise sobre atrasos, interrupções ou lotação. Ao registrar, o aviso entra no app
+        {profile?.telefoneWhatsapp ? ' e também é enviado no WhatsApp do seu perfil.' : '.'}
       </ThemedText>
+      {!profile?.telefoneWhatsapp && (
+        <ThemedText type="caption" themeColor="textSecondary">
+          Cadastre um WhatsApp em Perfil › Editar dados para receber o alerta no celular.
+        </ThemedText>
+      )}
       <FormError message={formError} />
 
       {query.data.length === 0 ? (

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { SeveridadeChip } from '@/components/severidade-chip';
@@ -12,12 +12,17 @@ import { LoadingView } from '@/components/ui/state-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useFocusQuery } from '@/hooks/use-focus-query';
 import { useTheme } from '@/hooks/use-theme';
+import { notify } from '@/lib/confirm';
+import { errorMessage } from '@/lib/errors';
 import { canalLabel, formatDateTime } from '@/lib/format';
+import { INBOX_POLL_MS, useInbox } from '@/providers/inbox-provider';
 import { buscarAlerta } from '@/services/alertas';
-import { minhasNotificacoes } from '@/services/notificacoes';
-import type { AlertaResponse, NotificacaoResponse } from '@/types/api';
+import { buscarLinha } from '@/services/linhas';
+import { dispararNotificacaoMock, minhasNotificacoes } from '@/services/notificacoes';
+import type { AlertaResponse, LinhaResponse, NotificacaoResponse } from '@/types/api';
 
 const alertaCache = new Map<string, AlertaResponse | null>();
+const linhaCache = new Map<string, LinhaResponse | null>();
 
 async function loadAlertas(ids: string[]) {
   const missing = ids.filter((id) => !alertaCache.has(id));
@@ -29,15 +34,47 @@ async function loadAlertas(ids: string[]) {
   return new Map(ids.map((id) => [id, alertaCache.get(id) ?? null]));
 }
 
+async function loadLinhas(ids: string[]) {
+  const missing = ids.filter((id) => !linhaCache.has(id));
+  await Promise.all(
+    missing.map(async (id) => {
+      linhaCache.set(id, await buscarLinha(id).catch(() => null));
+    })
+  );
+  return new Map(ids.map((id) => [id, linhaCache.get(id) ?? null]));
+}
+
 export default function NotificacoesScreen() {
   const theme = useTheme();
+  const { markAllSeen, refresh: refreshInbox } = useInbox();
+  const [mocking, setMocking] = useState(false);
 
   const fetcher = useCallback(async () => {
     const notificacoes = await minhasNotificacoes();
     const alertas = await loadAlertas([...new Set(notificacoes.map((item) => item.alertaId))]);
-    return { notificacoes, alertas };
+    const linhaIds = [...alertas.values()].flatMap((alerta) => (alerta ? [alerta.linhaId] : []));
+    const linhas = await loadLinhas([...new Set(linhaIds)]);
+    return { notificacoes, alertas, linhas };
   }, []);
-  const query = useFocusQuery(fetcher, 'Não foi possível carregar suas notificações.');
+  const query = useFocusQuery(fetcher, 'Não foi possível carregar suas notificações.', INBOX_POLL_MS);
+
+  const seenKey = query.data?.notificacoes.map((item) => item.id).join(',') ?? '';
+  useEffect(() => {
+    if (!seenKey) return;
+    markAllSeen(seenKey.split(','));
+  }, [seenKey, markAllSeen]);
+
+  async function handleMock() {
+    setMocking(true);
+    try {
+      await dispararNotificacaoMock({ codigoIntegracao: '9', normalizacao: false });
+      await Promise.all([query.refresh(), refreshInbox()]);
+    } catch (reason) {
+      notify('Erro', errorMessage(reason, 'Não foi possível simular a notificação.'));
+    } finally {
+      setMocking(false);
+    }
+  }
 
   if (query.loading) return <LoadingView />;
 
@@ -56,15 +93,28 @@ export default function NotificacoesScreen() {
         />
       }
       ListHeaderComponent={
-        query.error ? (
+        query.error || __DEV__ ? (
           <View style={styles.header}>
-            <FormError message={query.error} />
-            <Button title="Tentar novamente" variant="ghost" onPress={query.refresh} loading={query.refreshing} />
+            {query.error ? (
+              <>
+                <FormError message={query.error} />
+                <Button title="Tentar novamente" variant="ghost" onPress={query.refresh} loading={query.refreshing} />
+              </>
+            ) : null}
+            {__DEV__ ? (
+              <Button
+                title="Simular alerta (dev)"
+                icon="bell"
+                variant="secondary"
+                loading={mocking}
+                onPress={handleMock}
+              />
+            ) : null}
           </View>
-        ) : null
+        ) : undefined
       }
       ListEmptyComponent={
-        query.error ? null : (
+        query.error ? undefined : (
           <View style={styles.empty}>
             <View style={[styles.emptyIcon, { backgroundColor: theme.primarySoft }]}>
               <Icon name="bell" size={28} color={theme.primaryText} />
@@ -78,14 +128,29 @@ export default function NotificacoesScreen() {
           </View>
         )
       }
-      renderItem={({ item }) => (
-        <NotificacaoItem notificacao={item} alerta={query.data?.alertas.get(item.alertaId) ?? null} />
-      )}
+      renderItem={({ item }) => {
+        const alerta = query.data?.alertas.get(item.alertaId) ?? null;
+        return (
+          <NotificacaoItem
+            notificacao={item}
+            alerta={alerta}
+            linha={alerta ? (query.data?.linhas.get(alerta.linhaId) ?? null) : null}
+          />
+        );
+      }}
     />
   );
 }
 
-function NotificacaoItem({ notificacao, alerta }: { notificacao: NotificacaoResponse; alerta: AlertaResponse | null }) {
+function NotificacaoItem({
+  notificacao,
+  alerta,
+  linha,
+}: {
+  notificacao: NotificacaoResponse;
+  alerta: AlertaResponse | null;
+  linha: LinhaResponse | null;
+}) {
   const theme = useTheme();
   const isWhatsapp = notificacao.canal === 'WHATSAPP';
 
@@ -106,7 +171,8 @@ function NotificacaoItem({ notificacao, alerta }: { notificacao: NotificacaoResp
         <View style={styles.body}>
           <View style={styles.meta}>
             <ThemedText type="caption" themeColor="textSecondary">
-              {canalLabel(notificacao.canal)} · {formatDateTime(notificacao.enviadoEm)}
+              {canalLabel(notificacao.canal)}
+              {linha ? ` · ${linha.nome}` : ''} · {formatDateTime(notificacao.enviadoEm)}
             </ThemedText>
             {alerta && <SeveridadeChip severidade={alerta.severidade} />}
           </View>

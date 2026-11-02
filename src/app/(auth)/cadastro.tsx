@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useRef, useState } from 'react';
-import { StyleSheet, View, type TextInput } from 'react-native';
+import { StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import { BrandHeader } from '@/components/brand-header';
 import { ThemedText } from '@/components/themed-text';
@@ -26,9 +26,9 @@ type Field = 'nome' | 'email' | 'senha' | 'telefoneWhatsapp';
 
 export default function CadastroScreen() {
   const { signUp } = useAuth();
-  const emailRef = useRef<TextInput>(null);
-  const senhaRef = useRef<TextInput>(null);
-  const telefoneRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const senhaRef = useRef<TextInputInstance>(null);
+  const telefoneRef = useRef<TextInputInstance>(null);
 
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -131,7 +131,7 @@ export default function CadastroScreen() {
           onChangeText={setTelefone}
           onSubmitEditing={handleSubmit}
           error={errors.telefoneWhatsapp}
-          hint="Usaremos para avisar sobre problemas nas suas linhas."
+          hint="Informe o WhatsApp para receber alertas da sua rota."
         />
         <Button
           title="Criar conta"

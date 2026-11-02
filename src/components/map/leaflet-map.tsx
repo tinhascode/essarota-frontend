@@ -1,13 +1,31 @@
-import { useEffect, useRef, useState } from 'react';
-import { Linking, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState, type ComponentType, type Ref } from 'react';
+import { Linking, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { createLeafletHtml } from '@/components/map/leaflet-html';
 import type { LeafletMapProps, MapInboundMessage, MapOutboundMessage } from '@/components/map/types';
 import { Colors } from '@/constants/theme';
 
+type LeafletWebViewHandle = {
+  injectJavaScript: (script: string) => void;
+};
+
+// RN 0.88 dropped NativeMethodsMixin; webview 14 types still depend on it.
+const LeafletWebView = WebView as unknown as ComponentType<{
+  ref?: Ref<LeafletWebViewHandle | null>;
+  originWhitelist?: string[];
+  source: { html: string };
+  onMessage?: (event: WebViewMessageEvent) => void;
+  onShouldStartLoadWithRequest?: (request: { url: string }) => boolean;
+  applicationNameForUserAgent?: string;
+  setSupportMultipleWindows?: boolean;
+  overScrollMode?: 'never' | 'always' | 'content';
+  bounces?: boolean;
+  style?: StyleProp<ViewStyle>;
+}>;
+
 export function LeafletMap({ scheme, origin, destination, colors, onPress, style }: LeafletMapProps) {
-  const webViewRef = useRef<WebView>(null);
+  const webViewRef = useRef<LeafletWebViewHandle>(null);
   // Incremented on every page load so state is re-sent if the WebView reloads.
   const [loadCount, setLoadCount] = useState(0);
   const [html] = useState(() => createLeafletHtml(scheme, Colors[scheme].backgroundElement));
@@ -30,7 +48,7 @@ export function LeafletMap({ scheme, origin, destination, colors, onPress, style
   }
 
   return (
-    <WebView
+    <LeafletWebView
       ref={webViewRef}
       originWhitelist={['*']}
       source={{ html }}

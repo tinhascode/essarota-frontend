@@ -7,28 +7,24 @@ import { SeveridadeChip } from '@/components/severidade-chip';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { FormError } from '@/components/ui/form-error';
 import { Icon } from '@/components/ui/icon';
 import { Screen } from '@/components/ui/screen';
-import { Segmented } from '@/components/ui/segmented';
 import { LoadingView, MessageView } from '@/components/ui/state-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useFocusQuery } from '@/hooks/use-focus-query';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
-import { CANAIS, canalLabel, formatDateTime, severidadeColors, tipoLabel } from '@/lib/format';
+import { formatDateTime, severidadeColors, tipoLabel } from '@/lib/format';
 import { goBack } from '@/lib/navigation';
 import { useAuth } from '@/providers/auth-provider';
 import { buscarAlerta, excluirAlerta } from '@/services/alertas';
 import { buscarLinha } from '@/services/linhas';
-import { registrarNotificacao } from '@/services/notificacoes';
-import type { CanalNotificacao, NotificacaoResponse } from '@/types/api';
 
 export default function AlertaDetalheScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { profile, refreshProfile } = useAuth();
+  const { profile } = useAuth();
 
   const fetcher = useCallback(async () => {
     const alerta = await buscarAlerta(id);
@@ -37,10 +33,6 @@ export default function AlertaDetalheScreen() {
   }, [id]);
   const query = useFocusQuery(fetcher, 'Não foi possível carregar o alerta.');
 
-  const [canal, setCanal] = useState<CanalNotificacao>(profile?.telefoneWhatsapp ? 'WHATSAPP' : 'PUSH');
-  const [sending, setSending] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [registrada, setRegistrada] = useState<NotificacaoResponse | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   if (query.loading) return <LoadingView />;
@@ -58,23 +50,6 @@ export default function AlertaDetalheScreen() {
 
   const { alerta, linha } = query.data;
   const severity = severidadeColors(alerta.severidade);
-
-  async function handleRegistrar() {
-    setSending(true);
-    setSendError(null);
-    try {
-      const usuarioId = profile?.id ?? (await refreshProfile())?.id;
-      if (!usuarioId) {
-        setSendError('Não foi possível identificar sua conta. Entre novamente e tente de novo.');
-        return;
-      }
-      setRegistrada(await registrarNotificacao({ usuarioId, alertaId: alerta.id, canal }));
-    } catch (reason) {
-      setSendError(errorMessage(reason, 'Não foi possível registrar a notificação.'));
-    } finally {
-      setSending(false);
-    }
-  }
 
   async function handleDelete() {
     const ok = await confirm({
@@ -129,47 +104,19 @@ export default function AlertaDetalheScreen() {
         )}
       </Card>
 
-      <View style={styles.section}>
-        <ThemedText type="heading">Registrar notificação</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          O envio automático ainda está em desenvolvimento. Por enquanto, registre que você foi avisado sobre este
-          alerta para ele aparecer no seu histórico.
+      <View style={[styles.notice, { backgroundColor: theme.accentSoft }]}>
+        <Icon name="bell" size={18} color={theme.accentText} />
+        <ThemedText type="small" themeColor="accentText" style={styles.flex}>
+          {profile?.telefoneWhatsapp
+            ? `O backend já avisou no app e no WhatsApp ${profile.telefoneWhatsapp}.`
+            : 'O aviso já entrou no app. Cadastre um WhatsApp no perfil para receber também no celular.'}
         </ThemedText>
-        {registrada ? (
-          <View style={[styles.success, { backgroundColor: theme.accentSoft }]}>
-            <Icon name="check" size={20} color={theme.accentText} />
-            <View style={styles.flex}>
-              <ThemedText type="smallBold" themeColor="accentText">
-                Notificação registrada via {canalLabel(registrada.canal)}
-              </ThemedText>
-              <ThemedText type="caption" themeColor="textSecondary">
-                {formatDateTime(registrada.enviadoEm)}
-              </ThemedText>
-            </View>
-            <Button
-              title="Histórico"
-              variant="ghost"
-              style={styles.smallButton}
-              onPress={() => router.push('/perfil/notificacoes', { withAnchor: true })}
-            />
-          </View>
-        ) : (
-          <>
-            <Segmented<CanalNotificacao>
-              label="Canal"
-              value={canal}
-              onChange={setCanal}
-              options={CANAIS.map((item) => ({ ...item, icon: item.value === 'WHATSAPP' ? 'chat' : 'bell' }))}
-            />
-            {canal === 'WHATSAPP' && !profile?.telefoneWhatsapp && (
-              <ThemedText type="caption" themeColor="textSecondary">
-                Você ainda não cadastrou um WhatsApp. Adicione em Perfil › Editar dados.
-              </ThemedText>
-            )}
-            <FormError message={sendError} />
-            <Button title="Registrar notificação" icon="bell" variant="secondary" loading={sending} onPress={handleRegistrar} />
-          </>
-        )}
+        <Button
+          title="Inbox"
+          variant="ghost"
+          style={styles.smallButton}
+          onPress={() => router.push('/perfil/notificacoes', { withAnchor: true })}
+        />
       </View>
 
       <Button title="Excluir alerta" icon="delete" variant="danger" loading={deleting} onPress={handleDelete} />
@@ -208,10 +155,7 @@ const styles = StyleSheet.create({
     minHeight: 36,
     paddingHorizontal: Spacing.three,
   },
-  section: {
-    gap: Spacing.two,
-  },
-  success: {
+  notice: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,

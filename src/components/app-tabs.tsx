@@ -2,9 +2,11 @@ import { Tabs } from 'expo-router/js-tabs';
 
 import { Icon } from '@/components/ui/icon';
 import { useTheme } from '@/hooks/use-theme';
+import { useInbox } from '@/providers/inbox-provider';
 
 export default function AppTabs() {
   const theme = useTheme();
+  const { unreadCount } = useInbox();
 
   return (
     <Tabs
@@ -41,6 +43,8 @@ export default function AppTabs() {
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color, size }) => <Icon name="person" color={color} size={size} />,
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+          tabBarBadgeStyle: { backgroundColor: theme.danger, color: theme.onPrimary },
         }}
       />
     </Tabs>

@@ -4,6 +4,7 @@ export const StorageKeys = {
   token: 'essarota.token',
   session: 'essarota.session',
   themePreference: 'essarota.theme',
+  lastSeenNotificacoes: 'essarota.lastSeenNotificacoes',
 } as const;
 
 export const storage = {

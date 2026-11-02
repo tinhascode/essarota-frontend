@@ -1,6 +1,6 @@
 export type TipoTransporte = 'METRO' | 'TREM' | 'ONIBUS' | (string & {});
 export type SeveridadeAlerta = 'BAIXA' | 'MEDIA' | 'ALTA' | 'GRAVE';
-export type CanalNotificacao = 'WHATSAPP' | 'PUSH' | (string & {});
+export type CanalNotificacao = 'APP' | 'WHATSAPP' | 'PUSH' | (string & {});
 
 export interface ApiErrorResponse {
   timestamp: string;
@@ -124,4 +124,12 @@ export interface NotificacaoResponse {
   alertaId: string;
   canal: string;
   enviadoEm: string;
+}
+
+export interface MockNotificacaoRequest {
+  linhaId?: string | null;
+  codigoIntegracao?: string | null;
+  descricao?: string | null;
+  severidade?: SeveridadeAlerta | null;
+  normalizacao?: boolean;
 }

@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useRef, useState } from 'react';
-import { StyleSheet, View, type TextInput } from 'react-native';
+import { StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import { BrandHeader } from '@/components/brand-header';
 import { ThemedText } from '@/components/themed-text';
@@ -18,7 +18,7 @@ type Field = 'email' | 'senha';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
-  const senhaRef = useRef<TextInput>(null);
+  const senhaRef = useRef<TextInputInstance>(null);
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
